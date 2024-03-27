@@ -512,6 +512,55 @@ const MerchantForm = ({ insertApi }: { insertApi: any }) => {
               )}
             />
 
+<div className="flex flex-col">
+              <FormField
+                control={form.control}
+                name="enable_peer_to_peer"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      <h2 className="text-lg font-semibold">Step 9</h2>
+                      <p className="text-sm font-normal text-gray-400">
+                        peer to peer mode
+                      </p>
+                    </FormLabel>
+                    <div className="flex  items-center gap-6 mt-4">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <Label
+                        className="text-gray-600 leading-5 text-sm"
+                        htmlFor="escrow"
+                      >
+                        {" "}
+                        Enable peer to peer mode
+                      </Label>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {form.watch("enable_peer_to_peer") && (
+                <div className="mt-4"> {/* Add margin-top here */}
+                  <FormField
+                    control={form.control}
+                    name="merchant_address"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Merchant Address</FormLabel>
+                        <Input type="text" {...field} placeholder="Enter Merchant Address" />
+                        <FormMessage />
+                        <FormDescription>The payment will directly send to your account. Please make sure you have control of the address</FormDescription>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              )}
+            </div>
+            
             <FormField
               control={form.control}
               name="email"
