@@ -30,7 +30,7 @@ import { AlertTriangle, FerrisWheel, QrCode } from "lucide-react";
 import CopyComponent from "./CopyComponent";
 import Image from "next/image";
 import PreviewCard from "./PreviewCard";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { redirect } from "next/navigation";
 import QRCode from "qrcode.react";
 import { Mail } from "lucide-react";
@@ -54,6 +54,9 @@ const formSchema = z.object({
     .min(1, { message: "Product Description is required" }),
   quantity_max: z.string().min(1, { message: "Quantity is required" }),
   quantity_min: z.string().min(1, { message: "Quantity is required" }),
+}).refine((data) => Number(data.quantity_max) >= Number(data.quantity_min), {
+  message: "Quantity max must be higher than or equal to Quantity min",
+  path: ["quantity_max"], // path of error
 });
 
 const MerchantForm = ({ insertApi }: { insertApi: any }) => {
@@ -81,32 +84,36 @@ const MerchantForm = ({ insertApi }: { insertApi: any }) => {
       color_pallet: "#8C52FF",
       product_description: "",
       quantity_min: "1",
-      quantity_max: "100",
+      quantity_max: "10000"
     },
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     console.log(values);
-    //@ts-ignore
+		//@ts-ignore
     values.price = parseFloat(values.price);
-    //@ts-ignore
-    submitButton.current.disabled = true;
-    const product = await insertApi(values);
-    console.log(product);
+		//@ts-ignore
+	  submitButton.current.disabled = true;
+	  const product = await insertApi(values);
+	  console.log(product);
 
-    setFormID(product.data.product_id);
-    const url = `app.link?pid=${product.data.product_id}`;
-    setURL(url);
-    redirect(url);
-
-    if (values) {
-      alert("merchant Added");
-    }
-
-    setTimeout(() => {
-      form.reset();
-    }, 2000);
+	  setFormID(product.data.product_id);
+	  const url = `app.link?pid=${product.data.product_id}`;
+	  setURL(url);
+    if (values.email_receipt_to_self)
+    await axios.get(
+  `http://localhost:3002/api/sendgrid?email=${values.email}&name=${values.name}&address=${values.merchant_address}&price=${values.price}&description=${values.product_description}`
+  );
+  
+  if (values) {
+    alert("Product Added");
   }
+  
+  setTimeout(() => {
+    form.reset();
+	}, 2000);
+	redirect(url);
+}
 
   return (
     <div className="flex flex-col sm:flex-row justify-between gap2 md:gap-20 mx-4 md:mx-auto w-[95%] md:w-[80%] my-20 ">
@@ -465,9 +472,11 @@ const MerchantForm = ({ insertApi }: { insertApi: any }) => {
                             <FormControl>
                         <Input type="number" 
                         {...field} 
+                                min={1}
                         step={1} 
                         onChange={(event) => {
-                          const parsedValue = Math.min(100, parseInt(event.target.value, 10));
+                          let parsedValue = parseInt(event.target.value, 10);
+                          parsedValue = parsedValue <= 0 || isNaN(parsedValue) ? 1 : parsedValue;
                           field.onChange(isNaN(parsedValue) ? "" : parsedValue.toString());// Handle invalid input
                         }}/>
                       </FormControl>
@@ -482,9 +491,11 @@ const MerchantForm = ({ insertApi }: { insertApi: any }) => {
                       </FormLabel>
                       <FormControl>
                         <Input type="number" 
-                        {...field} step={1} 
+                          {...field} step={1} 
+                          min={1}
                         onChange={(event) => {
-                          const parsedValue = Math.min(100, parseInt(event.target.value, 10));
+                          let parsedValue = parseInt(event.target.value, 10);
+                          parsedValue = parsedValue <= 0 || isNaN(parsedValue) ? 1 : parsedValue;
                           field.onChange(isNaN(parsedValue) ? "" : parsedValue.toString()); // Handle invalid input
                         }}/>
                       </FormControl>
@@ -495,6 +506,55 @@ const MerchantForm = ({ insertApi }: { insertApi: any }) => {
                 </FormItem>
               )}
             />
+
+<div className="flex flex-col">
+              <FormField
+                control={form.control}
+                name="enable_peer_to_peer"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      <h2 className="text-lg font-semibold">Step 9</h2>
+                      <p className="text-sm font-normal text-gray-400">
+                        peer to peer mode
+                      </p>
+                    </FormLabel>
+                    <div className="flex  items-center gap-6 mt-4">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <Label
+                        className="text-gray-600 leading-5 text-sm"
+                        htmlFor="escrow"
+                      >
+                        {" "}
+                        Enable peer to peer mode
+                      </Label>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {form.watch("enable_peer_to_peer") && (
+                <div className="mt-4"> {/* Add margin-top here */}
+                  <FormField
+                    control={form.control}
+                    name="merchant_address"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Merchant Address</FormLabel>
+                        <Input type="text" {...field} placeholder="Enter Merchant Address" />
+                        <FormMessage />
+                        <FormDescription>The payment will directly send to your account. Please make sure you have control of the address</FormDescription>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              )}
+            </div>
 
             <FormField
               control={form.control}
@@ -537,6 +597,8 @@ const MerchantForm = ({ insertApi }: { insertApi: any }) => {
                 </FormItem>
               )}
             />
+
+            
 
             <Button ref={submitButton} type="submit">
               Submit

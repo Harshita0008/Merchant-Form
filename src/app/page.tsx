@@ -37,7 +37,7 @@ interface dataType {
   company_image_url: string,
   product_image_url : string
   quantity_min: string,
-  quantity_max: string
+  quantity_max: string,
 }
 
 async function insertMerchant(values: dataType) {
@@ -89,7 +89,6 @@ async function postData(data : dataType) {
         "min": parseInt(data.quantity_min), "max": parseInt(data.quantity_max)  // Keeping original values
       }
     },
-  "custom_fields": []
 };
 
 if(data.require_phone_no){
@@ -103,7 +102,7 @@ jsonData.custom_fields.push(
 )
 }
   // Default options are marked with *
-  const response = await fetch('https://api.muggle.link/api/products', {
+  const response = await fetch('http://127.0.0.1:3001/api/products', {
     method: 'POST', // *GET, POST, PUT, DELETE, etc.
     mode: 'cors', // no-cors, *cors, same-origin
     cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
